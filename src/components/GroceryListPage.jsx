@@ -10,17 +10,17 @@ function buildBody(storeName, items) {
   return `${storeName} list:\n\n${lines.join('\n')}`
 }
 
-function shareEmail(storeName, items, email) {
+function mailtoHref(storeName, items, email) {
   const subject = encodeURIComponent(`${storeName} grocery list`)
   const body = encodeURIComponent(buildBody(storeName, items))
-  window.location.href = `mailto:${email}?subject=${subject}&body=${body}`
+  return `mailto:${email}?subject=${subject}&body=${body}`
 }
 
-function shareText(storeName, items, phone) {
+function smsHref(storeName, items, phone) {
   const body = encodeURIComponent(buildBody(storeName, items))
   const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
   const sep = isApple ? '&' : '?'
-  window.location.href = `sms:${phone}${sep}body=${body}`
+  return `sms:${phone}${sep}body=${body}`
 }
 
 export default function GroceryListPage({
@@ -128,35 +128,25 @@ export default function GroceryListPage({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
                 <h3 style={{ fontSize: 14 }}>{storeName}</h3>
                 {canShare && (emailContacts.length > 0 || phoneContacts.length > 0) && (
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {emailContacts.length > 0 && (
-                      <select
-                        defaultValue=""
-                        onChange={(e) => {
-                          if (e.target.value) shareEmail(storeName, unpickedItems, e.target.value)
-                          e.target.value = ''
-                        }}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {emailContacts.map((c) => (
+                      <a
+                        key={`email-${c.id}`}
+                        className="btn small"
+                        href={mailtoHref(storeName, unpickedItems, c.email)}
                       >
-                        <option value="" disabled>Email to…</option>
-                        {emailContacts.map((c) => (
-                          <option key={c.id} value={c.email}>{c.name}</option>
-                        ))}
-                      </select>
-                    )}
-                    {phoneContacts.length > 0 && (
-                      <select
-                        defaultValue=""
-                        onChange={(e) => {
-                          if (e.target.value) shareText(storeName, unpickedItems, e.target.value)
-                          e.target.value = ''
-                        }}
+                        Email {c.name}
+                      </a>
+                    ))}
+                    {phoneContacts.map((c) => (
+                      <a
+                        key={`text-${c.id}`}
+                        className="btn small"
+                        href={smsHref(storeName, unpickedItems, c.phone)}
                       >
-                        <option value="" disabled>Text to…</option>
-                        {phoneContacts.map((c) => (
-                          <option key={c.id} value={c.phone}>{c.name}</option>
-                        ))}
-                      </select>
-                    )}
+                        Text {c.name}
+                      </a>
+                    ))}
                   </div>
                 )}
               </div>

@@ -116,6 +116,7 @@ input:focus-visible, button:focus-visible, select:focus-visible, textarea:focus-
 .btn {
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   padding: 8px 14px; border-radius: 8px; font-weight: 600; box-shadow: var(--shadow);
+  text-decoration: none; display: inline-block; cursor: pointer;
 }
 .btn:hover { border-color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
