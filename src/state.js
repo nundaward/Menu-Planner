@@ -86,7 +86,7 @@ export function deriveGroceryList(recipes, plan) {
         ;(recipe.ingredients || []).forEach((ing) => {
           if (!ing.text?.trim()) return
           const key = normalizeIngredientText(ing.text)
-          if (!groups.has(key)) groups.set(key, { key, items: [] })
+          if (!groups.has(key)) groups.set(key, { key, label: key, manual: false, items: [] })
           groups.get(key).items.push({ recipeId, recipeName: recipe.name, text: ing.text })
         })
       })

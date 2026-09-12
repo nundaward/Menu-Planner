@@ -20,9 +20,11 @@ create table if not exists week_plans (
   plan jsonb not null default '{}',
   checked jsonb not null default '{}',
   stores jsonb not null default '{}',
+  extra_items jsonb not null default '[]',
   unique (user_id, week_start)
 );
 alter table week_plans add column if not exists stores jsonb not null default '{}';
+alter table week_plans add column if not exists extra_items jsonb not null default '[]';
 
 create table if not exists stores (
   id uuid primary key default gen_random_uuid(),

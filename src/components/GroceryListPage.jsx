@@ -6,7 +6,7 @@ function capitalize(text) {
 }
 
 function buildBody(storeName, items) {
-  const lines = items.map((g) => `- ${capitalize(g.key)}`)
+  const lines = items.map((g) => `- ${capitalize(g.label)}`)
   return `${storeName} list:\n\n${lines.join('\n')}`
 }
 
@@ -33,9 +33,12 @@ export default function GroceryListPage({
   onClearChecks,
   onAssignStore,
   onAddStore,
+  onAddItem,
+  onRemoveItem,
 }) {
   const [addingStore, setAddingStore] = useState(false)
   const [newStoreName, setNewStoreName] = useState('')
+  const [newItemText, setNewItemText] = useState('')
 
   const storeOptions = [...DEFAULT_STORES, ...customStores.map((s) => s.name), OTHER_STORE]
   const emailContacts = contacts.filter((c) => c.email)
@@ -46,6 +49,13 @@ export default function GroceryListPage({
     onAddStore(newStoreName)
     setNewStoreName('')
     setAddingStore(false)
+  }
+
+  function handleAddItem(e) {
+    e.preventDefault()
+    if (!newItemText.trim()) return
+    onAddItem(newItemText)
+    setNewItemText('')
   }
 
   const buckets = {}
@@ -66,18 +76,20 @@ export default function GroceryListPage({
           type="checkbox"
           checked={isChecked}
           onChange={() => onToggle(group.key)}
-          aria-label={`Mark ${group.key} as picked up`}
+          aria-label={`Mark ${group.label} as picked up`}
         />
         <div style={{ flex: 1 }}>
-          <div className="name">{group.key}</div>
-          <div className="detail">
-            {group.items.map((it, i) => (
-              <span key={i}>
-                {it.text} ({it.recipeName})
-                {i < group.items.length - 1 ? ', ' : ''}
-              </span>
-            ))}
-          </div>
+          <div className="name">{group.label}</div>
+          {!group.manual && (
+            <div className="detail">
+              {group.items.map((it, i) => (
+                <span key={i}>
+                  {it.text} ({it.recipeName})
+                  {i < group.items.length - 1 ? ', ' : ''}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <select value={store} onChange={(e) => onAssignStore(group.key, e.target.value)}>
           <option value="">Store…</option>
@@ -85,6 +97,9 @@ export default function GroceryListPage({
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
+        {group.manual && (
+          <button className="iconbtn" onClick={() => onRemoveItem(group.key)} aria-label={`Remove ${group.label}`}>×</button>
+        )}
       </div>
     )
   }
@@ -114,8 +129,18 @@ export default function GroceryListPage({
         </div>
       </div>
 
+      <form onSubmit={handleAddItem} style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
+        <input
+          style={{ flex: 1 }}
+          placeholder="Add an item (e.g. paper towels)…"
+          value={newItemText}
+          onChange={(e) => setNewItemText(e.target.value)}
+        />
+        <button type="submit" className="btn primary">+ Add item</button>
+      </form>
+
       {groceryList.length === 0 ? (
-        <div className="empty-state">Nothing assigned to this week yet — add recipes to the plan to build a list.</div>
+        <div className="empty-state">Nothing on the list yet — add recipes to the plan, or add an item above.</div>
       ) : (
         bucketKeys.map((bucketKey) => {
           const isUnassigned = bucketKey === ' unassigned'

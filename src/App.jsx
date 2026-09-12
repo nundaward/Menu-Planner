@@ -8,6 +8,7 @@ import {
   emptyPlan,
   normalizePlan,
   deriveGroceryList,
+  uid,
 } from './state.js'
 import Login from './components/Login.jsx'
 import Topbar from './components/Topbar.jsx'
@@ -81,7 +82,7 @@ export default function App() {
     } else {
       const { data: inserted, error: insertError } = await supabase
         .from('week_plans')
-        .insert({ week_start: iso, plan: emptyPlan(), checked: {}, stores: {} })
+        .insert({ week_start: iso, plan: emptyPlan(), checked: {}, stores: {}, extra_items: [] })
         .select()
         .single()
       if (insertError) setErrorMsg(insertError.message)
@@ -93,7 +94,7 @@ export default function App() {
     setSaveStatus('saving')
     const { error } = await supabase
       .from('week_plans')
-      .update({ plan: row.plan, checked: row.checked, stores: row.stores })
+      .update({ plan: row.plan, checked: row.checked, stores: row.stores, extra_items: row.extra_items })
       .eq('id', row.id)
     if (error) {
       setSaveStatus('error')
@@ -137,6 +138,27 @@ export default function App() {
   function clearGroceryChecks() {
     if (!weekRow) return
     const updated = { ...weekRow, checked: {} }
+    setWeekRow(updated)
+    persistWeekRow(updated)
+  }
+
+  function addGroceryItem(text) {
+    const trimmed = text.trim()
+    if (!trimmed || !weekRow) return
+    const extraItems = [...(weekRow.extra_items || []), { id: uid('item'), text: trimmed }]
+    const updated = { ...weekRow, extra_items: extraItems }
+    setWeekRow(updated)
+    persistWeekRow(updated)
+  }
+
+  function removeGroceryItem(id) {
+    if (!weekRow) return
+    const extraItems = (weekRow.extra_items || []).filter((item) => item.id !== id)
+    const checked = { ...(weekRow.checked || {}) }
+    delete checked[id]
+    const stores = { ...(weekRow.stores || {}) }
+    delete stores[id]
+    const updated = { ...weekRow, extra_items: extraItems, checked, stores }
     setWeekRow(updated)
     persistWeekRow(updated)
   }
@@ -243,7 +265,14 @@ export default function App() {
 
   const groceryList = useMemo(() => {
     if (!weekRow) return []
-    return deriveGroceryList(recipes, weekRow.plan)
+    const derived = deriveGroceryList(recipes, weekRow.plan)
+    const manual = (weekRow.extra_items || []).map((item) => ({
+      key: item.id,
+      label: item.text,
+      manual: true,
+      items: [{ text: item.text }],
+    }))
+    return [...derived, ...manual].sort((a, b) => a.label.localeCompare(b.label))
   }, [recipes, weekRow])
 
   async function handleSignOut() {
@@ -305,6 +334,8 @@ export default function App() {
           onClearChecks={clearGroceryChecks}
           onAssignStore={assignStoreToItem}
           onAddStore={addStore}
+          onAddItem={addGroceryItem}
+          onRemoveItem={removeGroceryItem}
         />
       )}
 
